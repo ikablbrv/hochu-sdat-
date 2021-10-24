@@ -10,7 +10,7 @@ from parser_expression.parser_expression import ParserExpression
 
 console = sys.argv[1:]  # срез массива для чтения со второго элемента (потому что на первом main.py)
 type_analize = ''
-type_read = ''
+type_read = '' #ljtkfhlkn
 path = ''
 
 for el in console:

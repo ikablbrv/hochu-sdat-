@@ -1,1 +1,2 @@
-[1, 1]        Lexical Error: $
+[1, 1]        integer        5        5
+[1, 2]        identifier        a        a
