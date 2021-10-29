@@ -4,10 +4,10 @@ class Lexem:
         self.type = type
         self.code = code
         self.value = value
-        self.tab = '    '
 
     def to_string(self):
-        return f'{self.coordinate}{self.tab * 2}{self.type}{self.tab * 2}{self.code}{self.tab * 2}{self.value}'
+        tab = "\t" * 2
+        return f'{self.coordinate}{tab}{self.type}{tab}{self.code}{tab}{self.value}'
 
     def is_end(self):
         return self.type == 'end'

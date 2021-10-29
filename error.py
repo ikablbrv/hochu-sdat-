@@ -1,7 +1,7 @@
-class CompilerError(Exception):         #
+class CompilerError(Exception):
     pass
 
-class LexicalError(CompilerError):      #
+class LexicalError(CompilerError):
     pass
 
 class SyntaxError(CompilerError):

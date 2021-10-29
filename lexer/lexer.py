@@ -3,9 +3,13 @@ from lexer.lexem import Lexem
 from error import LexicalError
 from Reserve import Reserve
 
-class States(Enum): # наследование от класса Enum
-    start = 'start'             #начальное состояние для перехода к другим состояним
+
+class States(Enum):
+    start = 'start'
     integer = 'integer'
+    integer16 = 'integer16'
+    integer8 = 'integer8'
+    integer2 = 'integer2'
     real = 'real'
     identifier = 'identifier'
     reserved = 'reserved'
@@ -14,15 +18,17 @@ class States(Enum): # наследование от класса Enum
     separator = 'separator'
     assignment = 'assignment'
     comment = 'comment'
+    comment2 = 'comment2'
     end_of_file = 'end'
     error = 'error'
 
+
 class Lexer:
     def __init__(self, path):
-        self.file = open(path, 'r') # path - путь к файлу, r - чтение self.-доступен во фсех функиях класса
+        self.file = open(path, 'r')
         self.col = 0
         self.line = 1
-        self.state = States.start   #ссфлка на обьект
+        self.state = States.start
         self.symbol = ''
         self.next_symbol()
         self.buf = ''
@@ -31,18 +37,33 @@ class Lexer:
     def next_lexem(self):
         self.clear_buf()
         while self.buf or self.symbol:
-            if self.state == States.start: # 1 урвоень (состояние)
-                if self.symbol in Reserve.space.value:  # .value значение переменной
+            if self.state == States.start:
+                if self.symbol in Reserve.space.value:
                     if self.symbol == Reserve.next_line.value:
-                       self.next_line()
+                        self.next_line()
                     self.next_symbol()
-                elif self.symbol.isalpha():      # .isalpha() - буква
+                elif self.symbol.isalpha():
                     self.state = States.identifier
                     self.add_buf()
                     self.save_coordinates()
                     self.next_symbol()
                 elif self.symbol.isdigit():
                     self.state = States.integer
+                    self.add_buf()
+                    self.save_coordinates()
+                    self.next_symbol()
+                elif self.symbol == Reserve.int_formats.value[16]:
+                    self.state = States.integer16
+                    self.add_buf()
+                    self.save_coordinates()
+                    self.next_symbol()
+                elif self.symbol == Reserve.int_formats.value[8]:
+                    self.state = States.integer8
+                    self.add_buf()
+                    self.save_coordinates()
+                    self.next_symbol()
+                elif self.symbol == Reserve.int_formats.value[2]:
+                    self.state = States.integer2
                     self.add_buf()
                     self.save_coordinates()
                     self.next_symbol()
@@ -61,6 +82,9 @@ class Lexer:
                     self.add_buf()
                     self.save_coordinates()
                     self.next_symbol()
+                elif self.symbol == Reserve.open_brace.value:
+                    self.state = States.comment2
+                    self.next_symbol()
                 else:
                     self.state = States.error
                     self.add_buf()
@@ -76,7 +100,7 @@ class Lexer:
                         self.state = States.reserved
                     elif self.buf in Reserve.operations.value:
                         self.state = States.operation
-                    self.lexem = Lexem(self.coordinates, self.state.value, self.buf, self.buf.lower()) # приведение к нижнему регистру
+                    self.lexem = Lexem(self.coordinates, self.state.value, self.buf, self.buf.lower())
                     self.state = States.start
                     return self.lexem
 
@@ -90,6 +114,39 @@ class Lexer:
                     self.next_symbol()
                 else:
                     self.lexem = Lexem(self.coordinates, self.state.value, self.buf, int(self.buf))
+                    self.state = States.start
+                    return self.lexem
+
+            elif self.state == States.integer16:
+                if self.symbol.isdigit() or 'a' <= self.symbol.lower() <= 'f':
+                    self.add_buf()
+                    self.next_symbol()
+                elif len(self.buf) == 1 or 'g' <= self.symbol.lower() <= 'z':
+                    self.state = States.error
+                else:
+                    self.lexem = Lexem(self.coordinates, self.state.value, self.buf, int(self.buf[1:], 16))
+                    self.state = States.start
+                    return self.lexem
+
+            elif self.state == States.integer8:
+                if '0' <= self.symbol <= '7':
+                    self.add_buf()
+                    self.next_symbol()
+                elif len(self.buf) == 1 or self.symbol >= '8':
+                    self.state = States.error
+                else:
+                    self.lexem = Lexem(self.coordinates, self.state.value, self.buf, int(self.buf[1:], 8))
+                    self.state = States.start
+                    return self.lexem
+
+            elif self.state == States.integer2:
+                if '0' <= self.symbol <= '1':
+                    self.add_buf()
+                    self.next_symbol()
+                elif len(self.buf) == 1 or self.symbol >= '2':
+                    self.state = States.error
+                else:
+                    self.lexem = Lexem(self.coordinates, self.state.value, self.buf, int(self.buf[1:], 2))
                     self.state = States.start
                     return self.lexem
 
@@ -123,7 +180,7 @@ class Lexer:
                     return self.lexem
 
             elif self.state == States.operation:
-                if self.symbol + self.buf == Reserve.degree.value:
+                if self.buf + self.symbol in Reserve.operations.value:
                     self.add_buf()
                     self.next_symbol()
                     self.lexem = Lexem(self.coordinates, self.state.value, self.buf, self.buf)
@@ -153,6 +210,13 @@ class Lexer:
                 else:
                     self.next_symbol()
 
+            elif self.state == States.comment2:
+                if self.symbol == Reserve.next_line.value:
+                    self.next_line()
+                elif self.symbol == Reserve.close_brace.value:
+                    self.state = States.start
+                self.next_symbol()
+
             elif self.state == States.separator:
                 if self.buf + self.symbol in Reserve.assignments.value:
                     self.add_buf()
@@ -176,7 +240,6 @@ class Lexer:
         self.state = States.end_of_file
         self.lexem = Lexem(self.coordinates, self.state.value, self.buf, self.buf.lower())
         return self.lexem
-
 
     def current_lexem(self):
         return self.lexem

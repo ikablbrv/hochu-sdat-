@@ -8,9 +8,9 @@ from lexer.lexer import Lexer
 from error import CompilerError
 from parser_expression.parser_expression import ParserExpression
 
-console = sys.argv[1:]  # срез массива для чтения со второго элемента (потому что на первом main.py)
+console = sys.argv[1:]
 type_analize = ''
-type_read = '' #ljtkfhlkn
+type_read = ''
 path = ''
 
 for el in console:
@@ -24,7 +24,7 @@ for el in console:
 if type_analize == 'lexer':
     if type_read == 'file':
         if os.path.isfile(path):
-            try:  # если нашлась ошибка, переходит в except
+            try:
                 lexer = Lexer(path)
                 lexem = lexer.next_lexem()
                 if not lexem.is_end():
@@ -34,7 +34,7 @@ if type_analize == 'lexer':
                     lexem = lexer.next_lexem()
                     if not lexem.is_end():
                         print(lexem.to_string())
-            except CompilerError as error:  # if ошибка типа CompilerError, то выводим текст ошибки
+            except CompilerError as error:
                 print(error)
 
     if type_read == 'dir':
@@ -48,7 +48,7 @@ if type_analize == 'lexer':
                     output = abspath.replace('(code)', '(output)')
                     answer = abspath.replace('(code)', '')
                     file_output = open(output, 'w+')
-                    file_output.seek(0)  # seek - переносим на нулевой элемент, чтобы перезаписать файл
+                    file_output.seek(0)
                     file_answer = open(answer, 'r').read()
                     try:
                         lexer = Lexer(abspath)
@@ -61,7 +61,7 @@ if type_analize == 'lexer':
                             if not lexem.is_end():
                                 file_output.write('\n' + lexem.to_string())
 
-                    except CompilerError as error:  # if ошибка типа CompilerError, то выводим текст ошибки
+                    except CompilerError as error:
                         if file_output.tell() != 0:
                             file_output.write('\n' + str(error))
                         else:
@@ -106,7 +106,7 @@ if type_analize == 'parser':
                         parser = ParserExpression(lexer).expr()
                         file_output.write(parser.to_string())
 
-                    except CompilerError as error:  # if ошибка типа CompilerError, то выводим текст ошибки
+                    except CompilerError as error:
                         file_output.write(str(error))
 
                     finally:
